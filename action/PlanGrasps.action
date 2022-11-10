@@ -6,6 +6,7 @@ string search_energy
 SearchSpace search_space
 SearchContact search_contact
 SimAnnParams sim_ann_params
+FixVariables fix_variables
 
 int32 max_steps
 int32 feedback_num_steps

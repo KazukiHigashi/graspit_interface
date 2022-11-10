@@ -758,7 +758,7 @@ void GraspitInterface::PlanGraspsCB(const graspit_interface::PlanGraspsGoalConst
     goal = *_goal;
     ROS_INFO("About to Call emit runPlannerInMainLoop();");
     emit emitRunPlannerInMainThread();
-
+    
     ROS_INFO("Waiting For Planner to Finish");
     int last_feedback_step;
     while(mPlanner->isActive())
@@ -770,7 +770,7 @@ void GraspitInterface::PlanGraspsCB(const graspit_interface::PlanGraspsGoalConst
         if (current_feedback_step == mPlanner->getStartingStep()){
             continue;
         }
-        if ((current_feedback_step % _goal->feedback_num_steps == 0) && (current_feedback_step != last_feedback_step)){
+       if ((current_feedback_step % _goal->feedback_num_steps == 0) && (current_feedback_step != last_feedback_step)){
             ROS_INFO("Curret Planner Step: %d", mPlanner->getCurrentStep());
             ROS_INFO("Curret Num Grasps: %d", mPlanner->getListSize());
 
@@ -902,7 +902,6 @@ void GraspitInterface::runPlannerInMainThread()
         mPlanner->setAnnealingParameters(simAnnParams);
     }
 
-
     switch(goal.search_contact.type) {
         case graspit_interface::SearchContact::CONTACT_PRESET :
             {
@@ -923,6 +922,16 @@ void GraspitInterface::runPlannerInMainThread()
             }
     }
 
+    for(int i = 0; i < mHandObjectState->getNumVariables(); i++)
+    {
+        std::cout << i << std::endl;
+        if(goal.fix_variables.fixed[i] == 2){
+            ROS_INFO_STREAM(mHandObjectState->getVariable(i)->getName().toStdString().c_str() << " <- fixed");
+            // std::cout << goal.fix_variables.conf[i] << std::endl;
+            mHandObjectState->getVariable(i)->setFixed(true);
+        }
+    }
+
     ROS_INFO("Setting Planner Model State");
     mPlanner->setModelState(mHandObjectState);
     int max_steps = goal.max_steps;
@@ -935,6 +944,22 @@ void GraspitInterface::runPlannerInMainThread()
 
     ROS_INFO("resetting Planner");
     mPlanner->resetPlanner();
+
+    GraspPlanningState *t = mPlanner->getTargetState();
+    for(int i = 0; i < mHandObjectState->getNumVariables(); i++)
+    {
+        std::cout << i << std::endl;
+        if(goal.fix_variables.fixed[i] == 1){
+            ROS_INFO_STREAM(t->getVariable(i)->getName().toStdString().c_str() << ", target: " << goal.fix_variables.target[i] << ", confidence: " << goal.fix_variables.conf[i]);
+            t->getVariable(i)->setFixed(true);
+            // std::cout << "fixing work" << std::endl;
+            t->getVariable(i)->setValue(goal.fix_variables.target[i]);
+            // std::cout << "target work" << std::endl;
+            t->getVariable(i)->setConfidence(goal.fix_variables.conf[i]);
+            // std::cout << "confidence work" << std::endl;
+        }
+    }
+
 
     ROS_INFO("Starting Planner");
     mPlanner->startPlanner();

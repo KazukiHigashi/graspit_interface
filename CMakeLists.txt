@@ -63,6 +63,7 @@ find_package(graspit)
    Energy.msg
    Contact.msg
    SimAnnParams.msg
+   FixVariables.msg
  )
 
 ## Generate services in the 'srv' folder
